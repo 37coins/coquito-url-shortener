@@ -24,7 +24,7 @@ public class ShortenerClientException extends Exception{
 
     @Override
     public String toString() {
-        return "ProductsClientException{" +
+        return "ShortenerClientException{" +
                 "reason=" + reason +
                 '}';
     }

@@ -40,7 +40,7 @@ public class ShortenerClient {
             HttpResponse response = httpClient.execute(req);
             return new ObjectMapper().readValue(response.getEntity().getContent(), ShortenerResponse.class);
         } catch (IOException e){
-            log.error("products client error", e);
+            log.error("shortener client error", e);
             throw new ShortenerClientException(ShortenerClientException.Reason.ERROR_PARSING, e);
         }
     }
