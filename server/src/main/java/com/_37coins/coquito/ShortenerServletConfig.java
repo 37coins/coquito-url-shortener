@@ -5,7 +5,6 @@ import java.util.Random;
 import javax.servlet.ServletContextEvent;
 
 import org.restnucleus.filter.CorsFilter;
-import org.restnucleus.filter.DigestFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,15 +14,28 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.servlet.GuiceServletContextListener;
 import com.google.inject.servlet.ServletModule;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.JoinConfig;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 
 public class ShortenerServletConfig extends GuiceServletContextListener {
-	public static String digestToken;
 	public static String basePath;
+
+    public static String awsAccessKeyId;
+    public static String awsSecretKey;
+    public static String awsSecurityGroup;
+    public static String awsRegion;
+
 	public static Logger log = LoggerFactory.getLogger(ShortenerServletConfig.class);
 	public static Injector injector;
 	static {
-		digestToken = System.getProperty("digestToken");
 		basePath = System.getProperty("basePath");
+		awsAccessKeyId = System.getProperty("awsAccessKeyId");
+		awsSecretKey = System.getProperty("awsSecretKey");
+		awsSecurityGroup = System.getProperty("awsSecurityGroup");
+		awsRegion = System.getProperty("awsRegion");
 	}
     
 	@Override
@@ -38,7 +50,6 @@ public class ShortenerServletConfig extends GuiceServletContextListener {
             @Override
             protected void configureServlets(){
                 filter("/*").through(CorsFilter.class);
-            	filter("/product*").through(DigestFilter.class);
         	}
 
             @Provides @Singleton
@@ -47,8 +58,31 @@ public class ShortenerServletConfig extends GuiceServletContextListener {
             }
             
             @Provides @Singleton
-            public DigestFilter getDigestFilter(){
-                return new DigestFilter(ShortenerServletConfig.digestToken);
+            public HazelcastInstance getHazelcast() {
+                Config config = new Config();
+                if (awsAccessKeyId!=null) {
+                    config.setProperty("hazelcast.icmp.enabled", "true");
+                    JoinConfig joinConfig = config.getNetworkConfig().getJoin();
+                    joinConfig.getTcpIpConfig().setEnabled(false).setConnectionTimeoutSeconds(20);
+                    joinConfig.getMulticastConfig().setEnabled(false);
+                    joinConfig.getAwsConfig().setEnabled(true)
+                    .setAccessKey(awsAccessKeyId)
+                    .setSecretKey(awsSecretKey)
+                    .setRegion(awsRegion)
+                    .setSecurityGroupName(awsSecurityGroup);                        
+                }       
+                config.getGroupConfig().setName("shortener");
+                HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+                // Configure max queue size to 1000 elements
+                h.getConfig().getQueueConfig("default").setMaxSize(1000);
+                return h;
+            }
+            
+            @Provides @Singleton
+            public IMap<String,String> provideSentNotificationsMap(HazelcastInstance h){
+                h.getConfig().getMapConfig("tx-tainting").setTimeToLiveSeconds(3600);
+                IMap<String,String> sentNotificationsMap = h.getMap("tx-tainting");
+                return sentNotificationsMap;
             }
 
     	    @Provides @Singleton

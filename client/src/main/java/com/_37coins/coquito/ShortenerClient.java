@@ -1,7 +1,6 @@
 package com._37coins.coquito;
 
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -22,23 +21,23 @@ public class ShortenerClient {
     private HttpClient httpClient;
     private String uri;
 
-    public ShortenerClient(String uri, String digestToken){
-        this(uri, digestToken, HttpClientFactory.getClientBuilder().build());
+    public ShortenerClient(String uri){
+        this(uri, HttpClientFactory.getClientBuilder().build());
     }
 
-    public ShortenerClient(String uri, String digestToken, HttpClient httpClient) {
+    public ShortenerClient(String uri, HttpClient httpClient) {
         this.uri = uri;
         this.httpClient = httpClient;
     }
 
-    public ShortenerResponse request(ShortenerRequest longUrl) throws NoSuchAlgorithmException, IOException, ShortenerClientException {
+    public ShortenerResponse request(String longUrl) throws ShortenerClientException {
         HttpPost req = new HttpPost(uri + REQUEST_PATH);
-        String reqValue = new ObjectMapper().writeValueAsString(longUrl);
-        StringEntity entity = new StringEntity(reqValue, "UTF-8");
-        entity.setContentType("application/json");
-        req.setEntity(entity);
-        HttpResponse response = httpClient.execute(req);
         try {
+            String reqValue = new ObjectMapper().writeValueAsString(new ShortenerRequest().setLongUrl(longUrl));
+            StringEntity entity = new StringEntity(reqValue, "UTF-8");
+            entity.setContentType("application/json");
+            req.setEntity(entity);
+            HttpResponse response = httpClient.execute(req);
             return new ObjectMapper().readValue(response.getEntity().getContent(), ShortenerResponse.class);
         } catch (IOException e){
             log.error("products client error", e);
