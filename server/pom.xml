@@ -143,9 +143,9 @@
                              Plus, note environmentRef is an cnamePrefix, and we define it again
                           -->
                         <configuration>
-                            <environmentName>shortener-staging</environmentName>
-                            <environmentRef>shortener-staging.elasticbeanstalk.com</environmentRef>
-                            <cnamePrefix>shortener-staging.elasticbeanstalk.com</cnamePrefix>
+                            <environmentName>shortener</environmentName>
+                            <environmentRef>short37.elasticbeanstalk.com</environmentRef>
+                            <cnamePrefix>short37.elasticbeanstalk.com</cnamePrefix>
                         </configuration>
                         <executions>
                             <execution>
