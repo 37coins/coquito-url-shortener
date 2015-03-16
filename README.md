@@ -1,4 +1,4 @@
-coquito-test-gateway
+coquito-url-shortener
 ====================
 
-Gateway for testing
+own url shortener impl.

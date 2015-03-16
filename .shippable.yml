@@ -1,0 +1,48 @@
+language: java
+jdk:
+ - openjdk7
+
+branches:
+  only:
+    - develop
+
+cache: true
+
+env: 
+  global: 
+   #SLACK_URLPATH
+   - secure: Uji3DIu8TehmkXlTNyvvFoOtglO8BgSSjXeBLmU3tmLgNAgu/s07cBZPaeiIVzYWD0K9aEOBSWf0oKm5WE5yG5AcaloN4Fw6yM2Ss8x64O9hf5jpAedl3/1aVkYICpBB5YNK3TtGTIm/3W+aEujp6kep4WhI69mgdvLGd++6crwvO3RojPIcFXzIrk6PRgYQryoYSOpVzr533o5JkdQ3Sh3WDRcuEN7iZagm2bk89pSi1knuj0CAyMzSXQTk5+EpX+Twrn0F69dd1bqN81eMRM/LfPlJVX+EG7OapHQdXUd5uul+4UTU/gcSFyiZbR8XuhNN1cxjLVzmN2/LtYTqyw==
+   #IAM_SECRET_ID
+   - secure: iw5X8g6s5cxHouFYsEPC9FNRK05rrlW3HKUadAEUyhBaaOpLGjWiDhc08zrXfPWtwREMNdU5hlpzQv7L8k34qDUAne5hG5GUPVzqoZlYhKbaeA0biH5TDyPs9ZIkHtp7Ms1YMOoc2UU4RkTk6HiEamO4Gi0pNj08w68O/kkCooCq/zFdp5n7YC3HH5+PDHTMWOWlq3iEvxLuHFzbS69A1XgzkjXQNiqkdjoexzje9Jo4IM9WgQ2PAIih6rj3nS5FTVf2jQ4x7ZRDsv5rg8olkohuD/4I03s1OXFMJ/kNHB6YxJuG50iUZ4Aa6RlHVOg//1j7U//g6QYkLyyF0FKWsA==
+   #MAVEN_REPO_PASS
+   - secure: ugFAXzIL45EOC145g66kD27yhfDXiA092yvl2Xzi/uIbL8MogvRuRc9uKy8fSsZk8U0h0i+DZwXLJIcAo4uUMtmP8TyX+QwcudAonfI14WsbrtQ3vSaD48ze700qySP4goGNz4HxIxm1N8tl8TnUvhhZDWDy2l5qpBMr89Gr0uWkEvv40GtQ0YDLWn1h1Fqpwx7BFFZKJh/Y5bgZ/BkUcai6U+nWVSnhMIyY2Dmke9RQue5gyHV58vAp7iC0SeRxgwLornGAbMSbMA4jflmRleSKW5fTMEejd2AHwlIR+qTqYyUJ/N5/TH03WwF1XkBTftaov7fN56kN2UmKKsQu1Q==
+   #MVN_REPO_PASS_WRITE
+   - secure: YV90fY2zHfEt1HNC2sh/WmxpjdTBRnYAS5YT0uTSUKwnpRo0mwh8U0P4z5tvVVqGjeBP6X9gRzvOXWb5coCRHbT8yzsqem5OEMcxxM+SKzda1izBXDYD5fu+HwVqZbniX2IxzglDtQNn9/sEXyU4RHJZ7lTyByzeyco3xt+ex7ZVtkqo1eKnIACyirlqM7NcmuCeWVQc/Zh8U6hQm0XVKexOxDwaB8SyQQBquMP91pgp0tuaIcoDlvIMen6E7sWqSyGwflZuKR9dIknHXpL/VrNzT8t75NeDeyTYzZP4+t/k2Tw0rnTD84f7BMDcBX3Ujqg5XOyqjq7IlOaqKvkJ4w==
+
+   - SLACK_ORG=37coins 
+   - PROJECT=coquito-url-shortener
+
+before_install :
+   - mkdir -p ~/.m2/
+   - bash set_mvn_settings.bash AKIAIL7S36UXHQP4BN5Q $IAM_SECRET_ID $MAVEN_REPO_PASS $MVN_REPO_PASS_WRITE
+
+script :
+   - echo 1;
+
+install :
+   - mvn clean install -Dmaven.test.skip=true
+
+after_success : 
+   - mvn clean deploy -Dmaven.test.skip=true -Dmaven.deploy.skip=true -Ddeploy=true
+   - mvn clean deploy -DskipTests -pl .,client
+   - python slack_notifier_new.py --project $PROJECT --org $SLACK_ORG --urlpath $SLACK_TOKEN -s 
+
+after_failure :
+   - python slack_notifier_new.py --project $PROJECT --org $SLACK_ORG --urlpath $SLACK_TOKEN
+
+notifications:
+    email:
+      recipients:
+        - dev@37coins.com
+      on_success: always
+      on_failure: change

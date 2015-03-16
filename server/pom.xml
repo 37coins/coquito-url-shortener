@@ -1,0 +1,179 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+    <artifactId>coquito-shortener-server</artifactId>
+	<packaging>war</packaging>
+
+	<parent>
+		<artifactId>parent</artifactId>
+		<groupId>com.37coins.coquito</groupId>
+        <version>0.1.0-SNAPSHOT</version>
+	</parent>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+
+	<dependencies>
+        <dependency>
+            <artifactId>RestNucleusBoilerplate</artifactId>
+            <groupId>org.restnucleus</groupId>
+            <version>0.2.4</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.mail</groupId>
+                    <artifactId>mail</artifactId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>guava</artifactId>
+                    <groupId>com.google.guava</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>guice-servlet</artifactId>
+                    <groupId>com.google.inject</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>slf4j-simple</artifactId>
+                    <groupId>org.slf4j</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>slf4j-api</artifactId>
+                    <groupId>org.slf4j</groupId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.jetty.websocket</groupId>
+                    <artifactId>javax-websocket-server-impl</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.7.7</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <version>3.3.2</version>
+        </dependency>       
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-cloud</artifactId>
+            <version>3.3.2</version>
+        </dependency>
+        <dependency>
+            <groupId>com.37coins.coquito</groupId>
+            <artifactId>shortener-client</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+	</dependencies>
+
+	<profiles>
+		<profile>
+			<id>test environment</id>
+			<activation>
+				<property>
+					<name>environment</name>
+					<value>test</value>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.eclipse.jetty</groupId>
+						<artifactId>jetty-maven-plugin</artifactId>
+						<version>9.1.2.v20140210</version>
+						<configuration>
+							<useTestScope>true</useTestScope>
+							<webApp>
+								<contextPath>/</contextPath>
+							</webApp>
+							<stopPort>18081</stopPort>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+        <profile>
+            <id>aws-deploy</id>
+            <activation>
+                <property>
+                    <name>deploy</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <!-- NOTE#7 - Those are recommended for s3-based deployment -->
+            <properties>
+                <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
+                <beanstalk.s3Key>${project.artifactId}/${project.build.finalName}-${maven.build.timestamp}.war</beanstalk.s3Key>
+                <beanstalk.versionLabel>${project.version}_${maven.build.timestamp}</beanstalk.versionLabel>
+                <beanstalk.applicationName>aws.amazon.com</beanstalk.applicationName>
+                <beanstalker.region>ap-southeast-1</beanstalker.region>
+                <!-- review src/main/webapp/.ebextensions/java7.config if you change this setting
+                -->
+                <beanstalk.solutionStack>64bit Amazon Linux running Tomcat 8</beanstalk.solutionStack>
+                <!-- switch to .../health/check when you set iamInstanceProfile below -->
+                <beanstalk.applicationHealthCheckURL>/healthcheck</beanstalk.applicationHealthCheckURL>
+                <beanstalk.environmentType>SingleInstance</beanstalk.environmentType>
+                <!-- replace with your environment details -->
+                <beanstalk.iamInstanceProfile>37Staging</beanstalk.iamInstanceProfile>
+                <beanstalk.instanceType>t2.micro</beanstalk.instanceType>
+                <beanstalk.availabilityZones>ap-southeast-1a</beanstalk.availabilityZones> <!-- , us-west-1b  -->
+
+                <!-- NOTE#3 set some basic defaults to make it easier -->
+                <maven.test.skip>true</maven.test.skip>
+                <maven.install.skip>true</maven.install.skip>
+                <maven.deploy.skip>true</maven.deploy.skip>
+
+                <!-- NOTE#4 reasonable defaults -->
+                <beanstalk.multipartUpload>true</beanstalk.multipartUpload>
+                <beanstalk.useLatestVersion>false</beanstalk.useLatestVersion>
+
+                <!-- NOTE#5 those you'll likely to change -->
+                <beanstalk.applicationName>shortener</beanstalk.applicationName>
+                <beanstalk.s3Bucket>37comp-ap-southeast-1</beanstalk.s3Bucket>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>br.com.ingenieux</groupId>
+                        <artifactId>beanstalk-maven-plugin</artifactId>
+                        <!-- NOTE#8 - We define what we want / expect from an environment here
+
+                             Plus, note environmentRef is an cnamePrefix, and we define it again
+                          -->
+                        <configuration>
+                            <environmentName>shortener-staging</environmentName>
+                            <environmentRef>shortener-staging.elasticbeanstalk.com</environmentRef>
+                            <cnamePrefix>shortener-staging.elasticbeanstalk.com</cnamePrefix>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <phase>verify</phase>
+                                <goals>
+                                    <!-- NOTE#9 - You didn't need describe-environments. Really -->
+                                    <goal>upload-source-bundle</goal>
+                                    <goal>create-application-version</goal>
+                                    <goal>update-environment</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+	</profiles>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.1</version>
+				<configuration>
+					<source>1.7</source>
+					<target>1.7</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>
