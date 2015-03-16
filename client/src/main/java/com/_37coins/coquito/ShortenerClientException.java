@@ -32,8 +32,7 @@ public class ShortenerClientException extends Exception{
     public enum Reason {
         INVALID_URI,
         ERROR_GETTING_RESOURCE,
-        ERROR_PARSING,
-        AUTHENTICATION_FAILED
+        ERROR_PARSING
     }
 
 }
