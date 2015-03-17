@@ -1,7 +1,6 @@
 package com._37coins.coquito.resources;
 
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -9,6 +8,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
@@ -26,22 +26,20 @@ public class ShortenerResource {
     public final static String PATH = "/request";
 
 	private final IMap<String,String> cache;
-	private HttpServletRequest request;
 	
 	@Inject
-	public ShortenerResource(IMap<String,String> cache, @Context HttpServletRequest request){
+	public ShortenerResource(IMap<String,String> cache){
 		this.cache = cache;
-		this.request = request;
 	}
 	
 	@POST
-	public ShortenerResponse create(ShortenerRequest request){
+	public ShortenerResponse create(ShortenerRequest request, @Context UriInfo uriInfo){
 	    if (cache.containsValue(request.getLongUrl())){
 	        throw new WebApplicationException(Response.Status.CONFLICT);
 	    }
 	    String key = RandomStringUtils.random(4, "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ123456789");
 	    cache.put(key, request.getLongUrl());
-	    return new ShortenerResponse().setShortUrl(this.request.getHeader("Origin")+"/"+key);
+	    return new ShortenerResponse().setShortUrl(uriInfo.getBaseUri()+key);
 	}
 
 }
