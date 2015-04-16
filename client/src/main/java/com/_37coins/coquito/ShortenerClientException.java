@@ -24,7 +24,7 @@ public class ShortenerClientException extends Exception{
 
     @Override
     public String toString() {
-        return "ProductsClientException{" +
+        return "ShortenerClientException{" +
                 "reason=" + reason +
                 '}';
     }
@@ -32,8 +32,7 @@ public class ShortenerClientException extends Exception{
     public enum Reason {
         INVALID_URI,
         ERROR_GETTING_RESOURCE,
-        ERROR_PARSING,
-        AUTHENTICATION_FAILED
+        ERROR_PARSING
     }
 
 }
